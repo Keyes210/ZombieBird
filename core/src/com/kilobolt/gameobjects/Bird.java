@@ -27,7 +27,7 @@ public class Bird {
 
         position = new Vector2(x,y);
         velocity = new Vector2(0,0);
-        acceleration = new Vector2(0,450);
+        acceleration = new Vector2(0,460);
 
         boundingCircle = new Circle();
 
@@ -38,6 +38,12 @@ public class Bird {
         velocity.add(acceleration.cpy().scl(delta));
 
         if (velocity.y > 200) velocity.y = 200;
+
+        // CEILING CHECK
+        if (position.y < -13){
+            position.y = -13;
+            velocity.y = 0;
+        }
 
         position.add(velocity.cpy().scl(delta));
 
@@ -65,6 +71,16 @@ public class Bird {
 
     }
 
+    public void onRestart(int y){
+        rotation = 0;
+        position.y = y;
+        velocity.y = 0;
+        velocity.x = 0;
+        acceleration.y = 460;
+        acceleration.x = 0;
+        isAlive = true;
+    }
+
     public boolean isFalling(){
         return velocity.y > 110;
     }
@@ -75,8 +91,8 @@ public class Bird {
 
     public void onClick(){
         if (isAlive) {
-            velocity.y = -140;
             AssetLoader.flap.play();
+            velocity.y = -140;
         }
     }
 
