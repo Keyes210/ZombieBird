@@ -8,11 +8,21 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.kilobolt.TweenAccessor.Value;
+import com.kilobolt.TweenAccessor.ValueAccessor;
 import com.kilobolt.gameobjects.Bird;
 import com.kilobolt.gameobjects.Grass;
 import com.kilobolt.gameobjects.Pipe;
 import com.kilobolt.gameobjects.ScrollHandler;
+import com.kilobolt.ui.SimpleButton;
 import com.kilobolt.zbhelpers.AssetLoader;
+import com.kilobolt.zbhelpers.InputHandler;
+
+import java.util.List;
+
+import aurelienribon.tweenengine.Tween;
+import aurelienribon.tweenengine.TweenEquations;
+import aurelienribon.tweenengine.TweenManager;
 
 /**
  * Created by Alex on 7/29/2015.
@@ -26,7 +36,7 @@ public class GameRenderer {
     private SpriteBatch batcher;
 
     private int midPointY;
-    private int gameHeight;
+
 
     // Game Objects
     private Bird bird;
@@ -37,8 +47,15 @@ public class GameRenderer {
     // Game Assets
     private TextureRegion bg, grass;
     private Animation birdAnimation;
-    private TextureRegion birdMid, birdDown, birdUp;
+    private TextureRegion birdMid;
     private TextureRegion skullUp, skullDown, bar;
+
+    //Tween
+    private TweenManager manager;
+    private Value alpha = new Value();
+
+    //buttons
+    private List<SimpleButton> menuButtons;
 
     public GameRenderer(GameWorld world, int gameHeight, int midPointY) {
         this.myWorld = world;
@@ -47,8 +64,8 @@ public class GameRenderer {
         // We are setting the instance variables' values to be that of the
         // parameters passed in from GameScreen.
 
-        this.gameHeight = gameHeight;
         this.midPointY = midPointY;
+        this.menuButtons = ((InputHandler) Gdx.input.getInputProcessor()).getMenuButtons();
 
         cam = new OrthographicCamera();
         //params: do we want orthographic projection?, width, height
@@ -66,6 +83,13 @@ public class GameRenderer {
         // Call helper methods to initialize instance variables
         initGameObjects();
         initAssets();
+        setupTweens();
+    }
+
+    private void setupTweens() {
+        Tween.registerAccessor(Value.class, new ValueAccessor());
+        manager = new TweenManager();
+        Tween.to(alpha, -1, .5f).target(0).ease(TweenEquations.easeOutQuad).start(manager);
     }
 
     private void initGameObjects() {
@@ -83,8 +107,6 @@ public class GameRenderer {
         grass = AssetLoader.grass;
         birdAnimation = AssetLoader.birdAnimation;
         birdMid = AssetLoader.bird;
-        birdDown = AssetLoader.birdDown;
-        birdUp = AssetLoader.birdUp;
         skullUp = AssetLoader.skullUp;
         skullDown = AssetLoader.skullDown;
         bar = AssetLoader.bar;
@@ -137,7 +159,45 @@ public class GameRenderer {
                 pipe3.getWidth(), midPointY + 66 - (pipe3.getHeight() + 45));
     }
 
-    public void render(float runTime) {
+    private void drawBirdCentered(float runTime) {
+        batcher.draw(birdAnimation.getKeyFrame(runTime), 59, bird.getY() - 15,
+                bird.getWidth() / 2.0f, bird.getHeight() / 2.0f,
+                bird.getWidth(), bird.getHeight(), 1, 1, bird.getRotation());
+    }
+
+    private void drawBird(float runTime){
+        if(bird.shouldntFlap()){
+            batcher.draw(birdMid, bird.getX(), bird.getY(), bird.getWidth()/ 2.0f, bird.getHeight() / 2.0f,
+                    bird.getWidth(), bird.getHeight(), 1, 1, bird.getRotation());
+        }else{
+            batcher.draw(birdAnimation.getKeyFrame(runTime), bird.getX(),
+                    bird.getY(), bird.getWidth() / 2.0f,
+                    bird.getHeight() / 2.0f, bird.getWidth(), bird.getHeight(),
+                    1, 1, bird.getRotation());
+        }
+    }
+
+    private void drawMenuUI() {
+        batcher.draw(AssetLoader.zbLogo, 136 / 2 - 56, midPointY - 50,
+                AssetLoader.zbLogo.getRegionWidth() / 1.2f,
+                AssetLoader.zbLogo.getRegionHeight() / 1.2f);
+
+        for (SimpleButton button : menuButtons) {
+            button.draw(batcher);
+        }
+
+    }
+
+    private void drawScore() {
+        int length = ("" + myWorld.getScore()).length();
+        AssetLoader.shadow.draw(batcher, "" + myWorld.getScore(),
+                68 - (3 * length), midPointY - 82);
+        AssetLoader.font.draw(batcher, "" + myWorld.getScore(),
+                68 - (3 * length), midPointY - 83);
+    }
+
+
+    public void render(float delta, float runTime) {
         // Fill the entire screen with black, to prevent potential flickering.
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -177,7 +237,24 @@ public class GameRenderer {
 
         drawSkulls();
 
-        // Draw bird at its coordinates. Retrieve the Animation object from
+        if(myWorld.isRunning()){
+            drawBird(runTime);
+            drawScore();
+        }else if(myWorld.isReady()){
+            drawBird(runTime);
+            drawScore();
+        }else if(myWorld.isMenu()){
+            drawBirdCentered(runTime);
+            drawMenuUI();
+        }else if(myWorld.isGameOver()){
+            drawBird(runTime);
+            drawScore();
+        }else if(myWorld.isHighScore()){
+            drawBird(runTime);
+            drawScore();
+        }
+
+        /*// Draw bird at its coordinates. Retrieve the Animation object from
         // AssetLoader
         // Pass in the runTime variable to get the current frame.
         if (bird.shouldntFlap()) {
@@ -239,10 +316,24 @@ public class GameRenderer {
             // Draw text
             AssetLoader.font.draw(batcher, "" + myWorld.getScore(), (136 / 2) - (3 * score.length() - 1), 11);
 
-        }
+        }*/
+
         // End SpriteBatch
         batcher.end();
+        drawTransition(delta);
+    }
 
+    private void drawTransition(float delta) {
+        if (alpha.getValue() > 0) {
+            manager.update(delta);
+            Gdx.gl.glEnable(GL20.GL_BLEND);
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(1, 1, 1, alpha.getValue());
+            shapeRenderer.rect(0, 0, 136, 300);
+            shapeRenderer.end();
+            Gdx.gl.glDisable(GL20.GL_BLEND);
+        }
     }
 
 }
