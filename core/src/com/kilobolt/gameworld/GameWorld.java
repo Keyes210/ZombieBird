@@ -1,7 +1,5 @@
 package com.kilobolt.gameworld;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
 
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
@@ -20,10 +18,12 @@ public class GameWorld {
     private int score = 0;
     private int midPointY;
     private float runTime = 0;
+    private GameRenderer renderer;
 
     private GameState currentState;
 
     public GameWorld(int midPointY){
+        currentState = GameState.MENU;
         this.midPointY = midPointY;
         //initialize bird
         bird = new Bird(33, midPointY - 5, 17, 12);
@@ -31,11 +31,11 @@ public class GameWorld {
         scroller = new ScrollHandler(this, midPointY + 66);
 
         ground = new Rectangle(0, midPointY + 66, 136, 11);
-        currentState = GameState.MENU;
+
     }
 
     public enum GameState{
-        READY, RUNNING, GAMEOVER, HIGHSCORE, MENU
+        MENU, READY, RUNNING, GAMEOVER, HIGHSCORE
     }
 
 
@@ -53,15 +53,23 @@ public class GameWorld {
             scroller.stop();
             bird.die();
             AssetLoader.dead.play();
+            renderer.prepareTransition(255, 255, 255, .3f);
         }
 
         if(Intersector.overlaps(bird.getBoundingCircle(), ground)){
+
+            if (bird.isAlive()) {
+                AssetLoader.dead.play();
+                renderer.prepareTransition(255, 255, 255, .3f);
+
+                bird.die();
+            }
+
             scroller.stop();
-            bird.die();
             bird.decelerate();
             currentState = GameState.GAMEOVER;
 
-            if(score > AssetLoader.getHighScore()){
+            if (score > AssetLoader.getHighScore()) {
                 AssetLoader.setHighScore(score);
                 currentState = GameState.HIGHSCORE;
             }
@@ -87,7 +95,7 @@ public class GameWorld {
 
     private  void updateReady(float delta){
         bird.updateReady(runTime);
-        scroller.updateReady(runTime);
+        scroller.updateReady(delta);
     }
 
     public Bird getBird(){
@@ -110,10 +118,6 @@ public class GameWorld {
         score += increment;
     }
 
-    public boolean isReady(){
-        return currentState == GameState.READY;
-    }
-
     public void start(){
         currentState = GameState.RUNNING;
     }
@@ -123,11 +127,14 @@ public class GameWorld {
     }
 
     public void restart(){
-        currentState = GameState.READY;
         score = 0;
         bird.onRestart(midPointY - 5);
         scroller.onRestart();
-        currentState = GameState.READY;
+        ready();
+    }
+
+    public boolean isReady(){
+        return currentState == GameState.READY;
     }
 
     public boolean isGameOver(){
@@ -144,6 +151,10 @@ public class GameWorld {
 
     public boolean isRunning(){
         return currentState == GameState.RUNNING;
+    }
+
+    public void setRenderer(GameRenderer renderer){
+        this.renderer = renderer;
     }
 
 }

@@ -1,10 +1,7 @@
 package com.kilobolt.screens;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.GL20;
-import com.kilobolt.gameobjects.Bird;
 import com.kilobolt.gameworld.GameRenderer;
 import com.kilobolt.gameworld.GameWorld;
 import com.kilobolt.zbhelpers.InputHandler;
@@ -17,7 +14,7 @@ public class GameScreen implements Screen{
     private GameWorld world;
     private GameRenderer renderer;
 
-    private float runTime = 0;
+    private float runTime;
 
     public GameScreen(){
 
@@ -42,12 +39,13 @@ public class GameScreen implements Screen{
         InputHandler handler = new InputHandler(bird);
         Gdx.input.setInputProcessor(handler);*/
         renderer = new GameRenderer(world, (int) gameHeight, midPointY);
+        world.setRenderer(renderer);
     }
 
 
     @Override
     public void show() {
-        Gdx.app.log("GameScreen", "show called");
+
     }
 
     @Override

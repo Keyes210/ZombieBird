@@ -3,6 +3,7 @@ package com.kilobolt.ui;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
+import com.kilobolt.zbhelpers.AssetLoader;
 
 /**
  * Created by Alex on 8/23/2015.
@@ -10,12 +11,11 @@ import com.badlogic.gdx.math.Rectangle;
 public class SimpleButton {
     private float x, y, width, height;
     private TextureRegion buttonUp, buttonDown;
-
     private Rectangle bounds;
-
     private boolean isPressed = false;
 
-    public SimpleButton(float x, float y, float width, float height, TextureRegion buttonUp, TextureRegion buttonDown) {
+    public SimpleButton(float x, float y, float width, float height, TextureRegion buttonUp,
+                        TextureRegion buttonDown) {
         this.x = x;
         this.width = width;
         this.y = y;
@@ -50,6 +50,7 @@ public class SimpleButton {
         // It only counts as a touchUp if the button is in a pressed state.
         if(bounds.contains(screenX, screenY) && isPressed){
             isPressed = false;
+            AssetLoader.flap.play();
             return true;
         }
 

@@ -47,8 +47,9 @@ public class GameRenderer {
     // Game Assets
     private TextureRegion bg, grass;
     private Animation birdAnimation;
-    private TextureRegion birdMid;
+    private TextureRegion birdMid, ready, zbLogo, gameOver, highScore, scoreboard, star, noStar, retry;
     private TextureRegion skullUp, skullDown, bar;
+
 
     //Tween
     private TweenManager manager;
@@ -56,6 +57,8 @@ public class GameRenderer {
 
     //buttons
     private List<SimpleButton> menuButtons;
+
+    private Color transitionColor;
 
     public GameRenderer(GameWorld world, int gameHeight, int midPointY) {
         this.myWorld = world;
@@ -83,13 +86,9 @@ public class GameRenderer {
         // Call helper methods to initialize instance variables
         initGameObjects();
         initAssets();
-        setupTweens();
-    }
 
-    private void setupTweens() {
-        Tween.registerAccessor(Value.class, new ValueAccessor());
-        manager = new TweenManager();
-        Tween.to(alpha, -1, .5f).target(0).ease(TweenEquations.easeOutQuad).start(manager);
+        transitionColor = new Color();
+        prepareTransition(255, 255, 255, .5f);
     }
 
     private void initGameObjects() {
@@ -110,6 +109,14 @@ public class GameRenderer {
         skullUp = AssetLoader.skullUp;
         skullDown = AssetLoader.skullDown;
         bar = AssetLoader.bar;
+        ready = AssetLoader.ready;
+        zbLogo = AssetLoader.zbLogo;
+        gameOver = AssetLoader.gameOver;
+        highScore = AssetLoader.highScore;
+        scoreboard = AssetLoader.scoreboard;
+        retry = AssetLoader.retry;
+        star = AssetLoader.star;
+        noStar = AssetLoader.noStar;
     }
 
     private void drawGrass() {
@@ -188,12 +195,69 @@ public class GameRenderer {
 
     }
 
+    private void drawScoreboard() {
+        batcher.draw(scoreboard, 22, midPointY - 30, 97, 37);
+
+        batcher.draw(noStar, 25, midPointY - 15, 10, 10);
+        batcher.draw(noStar, 37, midPointY - 15, 10, 10);
+        batcher.draw(noStar, 49, midPointY - 15, 10, 10);
+        batcher.draw(noStar, 61, midPointY - 15, 10, 10);
+        batcher.draw(noStar, 73, midPointY - 15, 10, 10);
+
+        if (myWorld.getScore() > 2) {
+            batcher.draw(star, 73, midPointY - 15, 10, 10);
+        }
+
+        if (myWorld.getScore() > 17) {
+            batcher.draw(star, 61, midPointY - 15, 10, 10);
+        }
+
+        if (myWorld.getScore() > 50) {
+            batcher.draw(star, 49, midPointY - 15, 10, 10);
+        }
+
+        if (myWorld.getScore() > 80) {
+            batcher.draw(star, 37, midPointY - 15, 10, 10);
+        }
+
+        if (myWorld.getScore() > 120) {
+            batcher.draw(star, 25, midPointY - 15, 10, 10);
+        }
+
+        int length = ("" + myWorld.getScore()).length();
+
+        AssetLoader.whiteFont.draw(batcher, "" + myWorld.getScore(),
+                104 - (2 * length), midPointY - 20);
+
+        int length2 = ("" + AssetLoader.getHighScore()).length();
+        AssetLoader.whiteFont.draw(batcher, "" + AssetLoader.getHighScore(),
+                104 - (2.5f * length2), midPointY - 3);
+
+    }
+
+    private void drawRetry() {
+        batcher.draw(retry, 36, midPointY + 10, 66, 14);
+    }
+
+    private void drawReady() {
+        batcher.draw(ready, 36, midPointY - 50, 68, 14);
+    }
+
+    private void drawGameOver() {
+        batcher.draw(gameOver, 24, midPointY - 50, 92, 14);
+    }
+
+
     private void drawScore() {
         int length = ("" + myWorld.getScore()).length();
         AssetLoader.shadow.draw(batcher, "" + myWorld.getScore(),
                 68 - (3 * length), midPointY - 82);
         AssetLoader.font.draw(batcher, "" + myWorld.getScore(),
                 68 - (3 * length), midPointY - 83);
+    }
+
+    private void drawHighScore() {
+        batcher.draw(highScore, 22, midPointY - 50, 96, 14);
     }
 
 
@@ -228,8 +292,6 @@ public class GameRenderer {
         batcher.disableBlending();
         batcher.draw(bg, 0, midPointY + 23, 136, 43);
 
-        drawGrass();
-
         drawPipes();
 
         // The skulls need transparency, so we enable that again.
@@ -242,86 +304,38 @@ public class GameRenderer {
             drawScore();
         }else if(myWorld.isReady()){
             drawBird(runTime);
-            drawScore();
+            drawReady();
         }else if(myWorld.isMenu()){
             drawBirdCentered(runTime);
             drawMenuUI();
         }else if(myWorld.isGameOver()){
+            drawScoreboard();
             drawBird(runTime);
-            drawScore();
+            drawGameOver();
+            drawRetry();
         }else if(myWorld.isHighScore()){
+            drawScoreboard();
             drawBird(runTime);
-            drawScore();
+            drawHighScore();
+            drawRetry();
         }
 
-        /*// Draw bird at its coordinates. Retrieve the Animation object from
-        // AssetLoader
-        // Pass in the runTime variable to get the current frame.
-        if (bird.shouldntFlap()) {
-            batcher.draw(birdMid, bird.getX(), bird.getY(), bird.getWidth() / 2.0f, bird.getHeight() / 2.0f,
-                    bird.getWidth(), bird.getHeight(), 1, 1, bird.getRotation());
-        } else {
-            batcher.draw(birdAnimation.getKeyFrame(runTime), bird.getX(), bird.getY(), bird.getWidth() / 2.0f,
-                    bird.getHeight() / 2.0f, bird.getWidth(), bird.getHeight(), 1, 1, bird.getRotation());
-        }
-
-        if (myWorld.isReady()){
-            // Draw shadow first
-            AssetLoader.shadow.draw(batcher, "Touch me", (136 / 2)
-                    - (42), 76);
-            // Draw text
-            AssetLoader.font.draw(batcher, "Touch me", (136 / 2)
-                    - (42 - 1), 75);
-        }else {
-               if(myWorld.isGameOver() || myWorld.isHighScore()) {
-
-                   if (myWorld.isGameOver()) {
-                       AssetLoader.shadow.draw(batcher, "Game Over", 25, 56);
-                       AssetLoader.font.draw(batcher, "Game Over", 24, 55);
-
-                       AssetLoader.shadow.draw(batcher, "High Score:", 23, 106);
-                       AssetLoader.font.draw(batcher, "High Score:", 22, 105);
-
-                       String highScore = AssetLoader.getHighScore() + "";
-
-                       // Draw shadow first
-                       AssetLoader.shadow.draw(batcher, highScore, (136 / 2)
-                               - (3 * highScore.length()), 128);
-                       // Draw text
-                       AssetLoader.font.draw(batcher, highScore, (136 / 2)
-                               - (3 * highScore.length() - 1), 127);
-                   } else {
-                       AssetLoader.shadow.draw(batcher, "High Score!", 19, 56);
-                       AssetLoader.font.draw(batcher, "High Score!", 18, 55);
-                   }
-                   AssetLoader.shadow.draw(batcher, "Try again?", 23, 76);
-                   AssetLoader.font.draw(batcher, "Try again?", 24, 75);
-
-                   // Convert integer into String
-                   String score = myWorld.getScore() + "";
-
-                   // Draw shadow first
-                   AssetLoader.shadow.draw(batcher, score,
-                           (136 / 2) - (3 * score.length()), 12);
-                   // Draw text
-                   AssetLoader.font.draw(batcher, score,
-                           (136 / 2) - (3 * score.length() - 1), 11);
-
-               }
-            // Convert integer into String
-            String score = myWorld.getScore() + "";
-
-            // Draw shadow first
-            AssetLoader.shadow.draw(batcher, "" + myWorld.getScore(), (136 / 2) - (3 * score.length()), 12);
-            // Draw text
-            AssetLoader.font.draw(batcher, "" + myWorld.getScore(), (136 / 2) - (3 * score.length() - 1), 11);
-
-        }*/
+        drawGrass();
 
         // End SpriteBatch
         batcher.end();
         drawTransition(delta);
     }
+
+    public void prepareTransition(int r, int g, int b, float duration) {
+        transitionColor.set(r / 255.0f, g / 255.0f, b / 255.0f, 1);
+        alpha.setValue(1);
+        Tween.registerAccessor(Value.class, new ValueAccessor());
+        manager = new TweenManager();
+        Tween.to(alpha, -1, duration).target(0)
+                .ease(TweenEquations.easeOutQuad).start(manager);
+    }
+
 
     private void drawTransition(float delta) {
         if (alpha.getValue() > 0) {
@@ -329,7 +343,7 @@ public class GameRenderer {
             Gdx.gl.glEnable(GL20.GL_BLEND);
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setColor(1, 1, 1, alpha.getValue());
+            shapeRenderer.setColor(transitionColor.r, transitionColor.g, transitionColor.b, alpha.getValue());
             shapeRenderer.rect(0, 0, 136, 300);
             shapeRenderer.end();
             Gdx.gl.glDisable(GL20.GL_BLEND);

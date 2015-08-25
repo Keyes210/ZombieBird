@@ -2,8 +2,6 @@ package com.kilobolt.zombiebird;
 
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
-import com.kilobolt.screens.GameScreen;
 import com.kilobolt.screens.SplashScreen;
 import com.kilobolt.zbhelpers.AssetLoader;
 

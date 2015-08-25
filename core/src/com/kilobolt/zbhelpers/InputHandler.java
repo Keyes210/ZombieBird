@@ -30,6 +30,9 @@ public class InputHandler implements InputProcessor{
 
         int midPointY = myWorld.getMidPointY();
 
+        this.scaleFactorX = scaleFactorX;
+        this.scaleFactorY = scaleFactorY;
+
         menuButtons = new ArrayList<SimpleButton>();
         playButton = new SimpleButton(136/2 - (AssetLoader.playButtonUp.getRegionWidth() / 2),
                 midPointY + 50, 29, 16, AssetLoader.playButtonUp, AssetLoader.playButtonDown);
@@ -41,15 +44,14 @@ public class InputHandler implements InputProcessor{
         screenX = scaleX(screenX);
         screenY = scaleY(screenY);
 
-        System.out.println(screenX + " " + screenY);
-
         if(myWorld.isMenu()) {
             playButton.isTouchDown(screenX, screenY);
         }else if(myWorld.isReady()){
             myWorld.start();
+            myBird.onClick();
+        }else if(myWorld.isRunning()){
+            myBird.onClick();
         }
-
-        myBird.onClick();
 
         if (myWorld.isGameOver() || myWorld.isHighScore()){
             // Reset all variables, go to GameState.READY
